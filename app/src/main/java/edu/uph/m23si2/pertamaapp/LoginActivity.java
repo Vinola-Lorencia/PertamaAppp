@@ -23,10 +23,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.uph.m23si2.pertamaapp.API.ApiResponse;
+import edu.uph.m23si2.pertamaapp.API.ApiResponseKota;
 import edu.uph.m23si2.pertamaapp.API.ApiService;
 import edu.uph.m23si2.pertamaapp.model.KRS;
 import edu.uph.m23si2.pertamaapp.model.KRSDetail;
 import edu.uph.m23si2.pertamaapp.model.KelasMataKuliah;
+import edu.uph.m23si2.pertamaapp.model.Kota;
 import edu.uph.m23si2.pertamaapp.model.Mahasiswa;
 import edu.uph.m23si2.pertamaapp.model.Matakuliah;
 import edu.uph.m23si2.pertamaapp.model.Prodi;
@@ -43,10 +45,15 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class LoginActivity extends AppCompatActivity {
     Button btnLogin;
     EditText edtNama, edtPassword;
-    Spinner sprProvinsi;
+    Spinner sprProvinsi, sprKota;
+
     List<Provinsi> provinsiList = new ArrayList<>();
+    List<Kota> kotaList = new ArrayList<>();
     List<String> namaProvinsi = new ArrayList<>();
-    ArrayAdapter<String> adapter;
+    List<String> namaKota = new ArrayList<>();
+    ArrayAdapter<String> provinsiAdapter;
+    ArrayAdapter<String> kotaAdapter;
+
 
 
     @Override
@@ -82,9 +89,16 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
         sprProvinsi = findViewById(R.id.sprProvinsi);
-        adapter = new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,namaProvinsi);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
-        sprProvinsi.setAdapter(adapter);
+        sprKota = findViewById(R.id.sprKota);
+        provinsiAdapter = new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,namaProvinsi);
+        provinsiAdapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+        sprProvinsi.setAdapter(provinsiAdapter);
+
+        kotaAdapter = new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,namaKota);
+        kotaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+        sprKota.setAdapter(kotaAdapter);
+
+
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("https://wilayah.id")
@@ -106,7 +120,7 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     }
 
-                    adapter.notifyDataSetChanged();
+                    provinsiAdapter.notifyDataSetChanged();
 
                     sprProvinsi.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                         @Override
@@ -114,6 +128,26 @@ public class LoginActivity extends AppCompatActivity {
                             Provinsi selected = provinsiList.get(position);
                             Log.d("Provinsi", selected.getCode() + " - " + selected.getName());
 
+                            apiService.getKota(selected.getCode()).enqueue(new Callback<ApiResponseKota>() {
+                                @Override
+                                public void onResponse(Call<ApiResponseKota> call, Response<ApiResponseKota> response) {
+                                    if (response.isSuccessful() && response.body() != null) {
+                                        kotaList = response.body().getData();
+                                        namaKota.clear();
+                                        for (Kota k : kotaList) {
+                                            namaKota.add(k.getName());
+                                        }
+
+                                        // Update adapter kota
+                                        kotaAdapter.notifyDataSetChanged();
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Call<ApiResponseKota> call, Throwable t) {
+                                    Log.e("API Kota", "Gagal ambil kota", t);
+                                }
+                            });
                         }
 
                         @Override
